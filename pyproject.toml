@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grasshopper-mcp"
+version = "0.1.0"
+description = "MCP server for Grasshopper 3D modeling"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "mcp>=1.4.0",
+    "rhinoinside; platform_system=='Windows'",  # For Windows
+    "rhino3dm>=7.15.0",                        
+    "requests",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+]
+
+[project.scripts]
+grasshopper-mcp = "grasshopper_mcp.server:main"
