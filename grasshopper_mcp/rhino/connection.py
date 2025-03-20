@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 import time
 import platform
 import sys
+import socket
+import tempfile
 
 from ..config import ServerConfig
 
@@ -65,6 +67,9 @@ class RhinoConnection:
         self.connected = False
         self.rhino_instance = None
         self.is_mac = platform.system() == "Darwin"
+
+        self.codelistener_host = "127.0.0.1"
+        self.codelistener_port = 614  # Default CodeListener port
 
     async def initialize(self) -> None:
         """Initialize connection to Rhino/Grasshopper."""
@@ -126,6 +131,126 @@ class RhinoConnection:
                 self.rhino_instance = {"r3d": r3d, "use_rhino3dm": True}
             except ImportError:
                 raise ImportError("Please install rhino3dm: uv add rhino3dm")
+
+    async def send_code_to_rhino(self, code: str) -> Dict[str, Any]:
+        """Send Python code to Rhino via CodeListener.
+
+        Args:
+            code: Python code to execute in Rhino
+
+        Returns:
+            Dictionary with result and response or error
+        """
+        try:
+            # Create a temporary Python file
+            fd, temp_path = tempfile.mkstemp(suffix=".py")
+            try:
+                # Write the code to the file
+                with os.fdopen(fd, "w") as f:
+                    f.write(code)
+
+                # Create message object
+                msg_obj = {"filename": temp_path, "run": True, "reset": False, "temp": True}
+
+                # Convert to JSON
+                json_msg = json.dumps(msg_obj)
+
+                # Create a TCP socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(10)
+                sock.connect((self.codelistener_host, self.codelistener_port))
+
+                # Send the JSON message
+                sock.sendall(json_msg.encode("utf-8"))
+
+                # Receive the response
+                response = sock.recv(4096).decode("utf-8")
+
+                # Close the socket
+                sock.close()
+
+                return {"result": "success", "response": response}
+
+            finally:
+                # Clean up - remove temporary file after execution
+                try:
+                    os.unlink(temp_path)
+                except Exception as cleanup_error:
+                    print(f"Error cleaning up temporary file: {cleanup_error}")
+
+        except Exception as e:
+            return {"result": "error", "error": str(e)}
+
+    async def generate_and_execute_rhino_code(
+        self, prompt: str, model_context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Generate Rhino Python code from a prompt and execute it.
+
+        Args:
+            prompt: Description of what code to generate
+            model_context: Optional context about the model (dimensions, parameters, etc.)
+
+        Returns:
+            Result dictionary with code, execution result, and any output
+        """
+        # Step 1: Generate Python code based on the prompt
+        code = await self._generate_code_from_prompt(prompt, model_context)
+
+        # Step 2: Execute the generated code in Rhino
+        result = await self.send_code_to_rhino(code)
+
+        # Return both the code and the execution result
+        return {
+            "result": result.get("result", "error"),
+            "code": code,
+            "response": result.get("response", ""),
+            "error": result.get("error", ""),
+        }
+
+    async def _generate_code_from_prompt(
+        self, prompt: str, model_context: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Generate Rhino Python code from a text prompt.
+
+        Args:
+            prompt: Description of what the code should do
+            model_context: Optional context about the model
+
+        Returns:
+            Generated Python code as a string
+        """
+        # Add standard imports for Rhino Python code
+        code = """
+import Rhino
+import rhinoscriptsyntax as rs
+import scriptcontext as sc
+import System
+from Rhino.Geometry import *
+
+# Disable redraw to improve performance
+rs.EnableRedraw(False)
+"""
+
+        # Add code based on the prompt
+        prompt_lower = prompt.lower()
+
+        if "circle" in prompt_lower:
+            radius = model_context.get("radius", 10.0) if model_context else 10.0
+            center_x = model_context.get("center_x", 0.0) if model_context else 0.0
+            center_y = model_context.get("center_y", 0.0) if model_context else 0.0
+            center_z = model_context.get("center_z", 0.0) if model_context else 0.0
+            code += f"""
+# Create a circle based on prompt: {prompt}
+center = Point3d({center_x}, {center_y}, {center_z})
+circle = Circle(Plane.WorldXY, center, {radius})
+circle_id = sc.doc.Objects.AddCircle(circle)
+if circle_id:
+    rs.ObjectName(circle_id, "GeneratedCircle")
+    print("Created a circle!")
+else:
+    print("Failed to create circle")
+"""
+        return code
 
     def _initialize_compute(self) -> None:
         """Initialize connection to compute.rhino3d.com."""
