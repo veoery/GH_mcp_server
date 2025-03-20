@@ -342,8 +342,20 @@ import scriptcontext as sc
 import Rhino.Geometry as rg
 import ghpythonlib.components as ghcomp
 import math
+"""
+        # Add code based on the prompt
+        prompt_lower = prompt.lower()
 
-print("hello world")
+        if "circle" in prompt_lower:
+            radius = model_context.get("radius", 10.0) if model_context else 10.0
+            center_x = model_context.get("center_x", 0.0) if model_context else 0.0
+            center_y = model_context.get("center_y", 0.0) if model_context else 0.0
+            center_z = model_context.get("center_z", 0.0) if model_context else 0.0
+            code += f"""
+# Create a circle based on prompt: {prompt}
+center = rg.Point3d({center_x}, {center_y}, {center_z})
+circle = rg.Circle(rg.Plane.WorldXY, center, {radius})
+print("Created a circle!")
 """
         return code
 

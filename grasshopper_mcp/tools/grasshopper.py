@@ -9,14 +9,21 @@ def register_grasshopper_tools(mcp: FastMCP) -> None:
     async def generate_grasshopper_code(
         description: str,
         file_path: str,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Dict[str, Any] = None,
         component_name: Optional[str] = None,
     ) -> str:
         """Generate Python code for a Grasshopper component based on a description.
 
         Args:
             description: Description of what the code should do
-            parameters: Optional parameters to use in the code generation
+            file_path: Path where the generated code will be saved
+            parameters: Dictionary of parameters to use in the code generation.
+                        Can include the following keys:
+                        - code_override: String containing complete code to use instead of generating
+                        - center_x, center_y, center_z: Numeric values for geometric operations
+                        - radius: Numeric value for circles or spheres
+                        - width, height, depth: Dimensions for rectangular forms
+                        - [Other commonly used parameters...]
             component_name: Optional name for the GH component
 
         Returns:
@@ -32,53 +39,6 @@ def register_grasshopper_tools(mcp: FastMCP) -> None:
 
         return f"""Generated Grasshopper Python code successfully:
 {result['code']}"""
-
-    @mcp.tool()
-    async def create_grasshopper_script(
-        description: str,
-        inputs: List[Dict[str, Any]],
-        outputs: List[Dict[str, Any]],
-        code: Optional[str] = None,
-    ) -> str:
-        """Create a Python script component in Grasshopper.
-
-        Args:
-            description: Description of what the script should do
-            inputs: List of input parameters with their types and descriptions
-                    [{"name": "radius", "type": "float", "description": "Circle radius"}]
-            outputs: List of output parameters with their types and descriptions
-                    [{"name": "circle", "type": "curve", "description": "Generated circle"}]
-            code: Optional Python code to use instead of generating from description
-
-        Returns:
-            Result of the operation
-        """
-        ctx = mcp.get_context()
-        rhino = ctx.request_context.lifespan_context.rhino
-
-        # If code not provided, generate it from description
-        if not code:
-            # Call code generation function
-            code_gen_result = await generate_python_code(rhino, description, inputs, outputs)
-            if code_gen_result["result"] == "error":
-                return f"Error generating code: {code_gen_result['error']}"
-
-            code = code_gen_result["code"]
-
-        # Create the component
-        create_result = await rhino.create_gh_script_component(
-            description=description, inputs=inputs, outputs=outputs, code=code
-        )
-
-        if create_result["result"] == "error":
-            return f"Error creating component: {create_result['error']}"
-
-        return f"""Successfully created Grasshopper Python component:
-- Description: {description}
-- Component ID: {create_result.get('component_id', 'Unknown')}
-- Inputs: {len(inputs)} parameters
-- Outputs: {len(outputs)} parameters
-"""
 
     @mcp.tool()
     async def add_grasshopper_component(

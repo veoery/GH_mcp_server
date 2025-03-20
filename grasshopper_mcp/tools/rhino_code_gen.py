@@ -2,7 +2,7 @@ from mcp.server.fastmcp import FastMCP
 from typing import Dict, Optional, Any
 
 
-def register_code_generation_tools(mcp: FastMCP) -> None:
+def register_rhino_code_generation_tools(mcp: FastMCP) -> None:
     """Register code generation tools with the MCP server."""
 
     @mcp.tool()
