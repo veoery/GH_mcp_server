@@ -5,8 +5,56 @@ import uuid
 from typing import Any, Dict, List, Optional
 import time
 import platform
+import sys
 
 from ..config import ServerConfig
+
+
+def find_scriptcontext_path():
+    scriptcontext_path = os.path.join(
+        os.environ["APPDATA"],
+        "McNeel",
+        "Rhinoceros",
+        "7.0",
+        "Plug-ins",
+        "IronPython (814d908a-e25c-493d-97e9-ee3861957f49)",
+        "settings",
+        "lib",
+    )
+
+    if not os.path.exists(scriptcontext_path):
+        # If the specific path doesn't exist, try to find it
+        import glob
+
+        appdata = os.environ["APPDATA"]
+        potential_paths = glob.glob(
+            os.path.join(appdata, "McNeel", "Rhinoceros", "7.0", "Plug-ins", "IronPython*", "settings", "lib")
+        )
+        if potential_paths:
+            scriptcontext_path
+            # sys.path.append(potential_paths[0])
+
+    return scriptcontext_path
+
+
+def find_RhinoPython_path(rhino_path):
+    appdata = os.environ["APPDATA"]
+    rhino_python_paths = [
+        # Standard Rhino Python lib paths
+        os.path.join(os.path.dirname(rhino_path), "Plug-ins", "IronPython"),
+        os.path.join(os.path.dirname(rhino_path), "Plug-ins", "IronPython", "Lib"),
+        os.path.join(os.path.dirname(rhino_path), "Plug-ins", "PythonPlugins"),
+        os.path.join(os.path.dirname(rhino_path), "Scripts"),
+        # Try to find RhinoPython in various locations
+        os.path.join(os.path.dirname(rhino_path), "Plug-ins"),
+        os.path.join(appdata, "McNeel", "Rhinoceros", "7.0", "Plug-ins"),
+        os.path.join(appdata, "McNeel", "Rhinoceros", "7.0", "Scripts"),
+        # Common Rhino installation paths for plugins
+        "C:\\Program Files\\Rhino 7\\Plug-ins",
+        "C:\\Program Files\\Rhino 7\\Plug-ins\\PythonPlugins",
+    ]
+
+    return rhino_python_paths
 
 
 class RhinoConnection:
@@ -39,19 +87,37 @@ class RhinoConnection:
 
             if not rhino_path or not os.path.exists(rhino_path):
                 raise ValueError(f"Invalid Rhino path: {rhino_path}")
-
+            # print(rhino_path)
             sys.path.append(rhino_path)
-            import rhinoinside
 
-            rhinoinside.load()
+            # Add the specific path for scriptcontext
+            scriptcontext_path = find_scriptcontext_path()
+            sys.path.append(scriptcontext_path)
 
-            # Import Rhino components
-            import Rhino
-            import Rhino.Geometry as rg
-            import scriptcontext as sc
+            RhinoPython_path = find_RhinoPython_path(rhino_path)
+            for path in RhinoPython_path:
+                if os.path.exists(path):
+                    sys.path.append(path)
+                    print(path)
 
-            # Store references
-            self.rhino_instance = {"Rhino": Rhino, "rg": rg, "sc": sc, "use_rhino3dm": False}
+            try:
+                import rhinoinside
+
+                rhinoinside.load()
+                print("rhinoinside installed.")
+                # Import Rhino components
+                import Rhino
+
+                print("Rhino installed.")
+                import Rhino.Geometry as rg
+
+                print("Rhino.Geometry installed.")
+                import scriptcontext as sc
+
+                # Store references
+                self.rhino_instance = {"Rhino": Rhino, "rg": rg, "sc": sc, "use_rhino3dm": False}
+            except ImportError as e:
+                raise ImportError(f"Error importing RhinoInside or Rhino components: {e}")
         else:
             # Cross-platform rhino3dm implementation
             try:
@@ -102,9 +168,15 @@ class RhinoConnection:
             exec(code, globals_dict, locals_dict)
             return {"result": "success", "data": locals_dict.get("result", None)}
         except Exception as e:
-            return {"result": "error", "error": str(e)}
+            # More detailed error reporting for Windows
+            import traceback
 
-    async def _execute_rhino3dm(self, code: str, parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            error_trace = traceback.format_exc()
+            return {"result": "error", "error": str(e), "traceback": error_trace}
+
+    async def _execute_rhino3dm(
+        self, code: str, parameters: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Execute code using rhino3dm library."""
         # Create execution context with rhino3dm
         r3d = self.rhino_instance["r3d"]
@@ -122,7 +194,9 @@ class RhinoConnection:
         except Exception as e:
             return {"result": "error", "error": str(e)}
 
-    async def _execute_compute(self, code: str, parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def _execute_compute(
+        self, code: str, parameters: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Execute code via compute.rhino3d.com API."""
         # Existing Compute API code
         import requests
@@ -132,7 +206,10 @@ class RhinoConnection:
         # Prepare request payload
         payload = {"algo": code, "pointer": None, "values": parameters or {}}
 
-        headers = {"Authorization": f"Bearer {self.config.compute_api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.config.compute_api_key}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.post(url, json=payload, headers=headers)
@@ -189,13 +266,20 @@ class RhinoConnection:
 
         if self.config.use_compute_api:
             # Implementation for compute API
-            return await self._create_gh_script_component_compute(component_id, description, inputs, outputs, code)
+            return await self._create_gh_script_component_compute(
+                component_id, description, inputs, outputs, code
+            )
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
             # Implementation for RhinoInside (Windows)
-            return await self._create_gh_script_component_rhinoinside(component_id, description, inputs, outputs, code)
+            return await self._create_gh_script_component_rhinoinside(
+                component_id, description, inputs, outputs, code
+            )
         else:
             # We can't directly create Grasshopper components with rhino3dm
-            return {"result": "error", "error": "Creating Grasshopper components requires RhinoInside or Compute API"}
+            return {
+                "result": "error",
+                "error": "Creating Grasshopper components requires RhinoInside or Compute API",
+            }
 
     async def _create_gh_script_component_rhinoinside(
         self,
@@ -297,7 +381,10 @@ class RhinoConnection:
             "code": code,
         }
 
-        headers = {"Authorization": f"Bearer {self.config.compute_api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.config.compute_api_key}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.post(url, json=payload, headers=headers)
@@ -327,12 +414,19 @@ class RhinoConnection:
 
         if self.config.use_compute_api:
             # Implementation for compute API
-            return await self._add_gh_component_compute(component_id, component_name, component_type, parameters)
+            return await self._add_gh_component_compute(
+                component_id, component_name, component_type, parameters
+            )
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
             # Implementation for RhinoInside
-            return await self._add_gh_component_rhinoinside(component_id, component_name, component_type, parameters)
+            return await self._add_gh_component_rhinoinside(
+                component_id, component_name, component_type, parameters
+            )
         else:
-            return {"result": "error", "error": "Adding Grasshopper components requires RhinoInside or Compute API"}
+            return {
+                "result": "error",
+                "error": "Adding Grasshopper components requires RhinoInside or Compute API",
+            }
 
     async def _add_gh_component_rhinoinside(
         self, component_id: str, component_name: str, component_type: str, parameters: Dict[str, Any]
@@ -396,9 +490,17 @@ class RhinoConnection:
         url = f"{self.config.compute_url}/grasshopper/component"
 
         # Prepare payload
-        payload = {"id": component_id, "name": component_name, "type": component_type, "parameters": parameters}
+        payload = {
+            "id": component_id,
+            "name": component_name,
+            "type": component_type,
+            "parameters": parameters,
+        }
 
-        headers = {"Authorization": f"Bearer {self.config.compute_api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.config.compute_api_key}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.post(url, json=payload, headers=headers)
@@ -427,9 +529,14 @@ class RhinoConnection:
         if self.config.use_compute_api:
             return await self._connect_gh_components_compute(source_id, source_param, target_id, target_param)
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
-            return await self._connect_gh_components_rhinoinside(source_id, source_param, target_id, target_param)
+            return await self._connect_gh_components_rhinoinside(
+                source_id, source_param, target_id, target_param
+            )
         else:
-            return {"result": "error", "error": "Connecting Grasshopper components requires RhinoInside or Compute API"}
+            return {
+                "result": "error",
+                "error": "Connecting Grasshopper components requires RhinoInside or Compute API",
+            }
 
     async def _connect_gh_components_rhinoinside(
         self, source_id: str, source_param: str, target_id: str, target_param: str
@@ -520,7 +627,10 @@ class RhinoConnection:
             "target_param": target_param,
         }
 
-        headers = {"Authorization": f"Bearer {self.config.compute_api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.config.compute_api_key}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.post(url, json=payload, headers=headers)
@@ -550,7 +660,10 @@ class RhinoConnection:
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
             return await self._run_gh_definition_rhinoinside(file_path, save_output, output_path)
         else:
-            return {"result": "error", "error": "Running Grasshopper definitions requires RhinoInside or Compute API"}
+            return {
+                "result": "error",
+                "error": "Running Grasshopper definitions requires RhinoInside or Compute API",
+            }
 
     async def _run_gh_definition_rhinoinside(
         self, file_path: Optional[str] = None, save_output: bool = False, output_path: Optional[str] = None
@@ -617,7 +730,10 @@ class RhinoConnection:
         # Prepare payload
         payload = {"file_path": file_path, "save_output": save_output, "output_path": output_path}
 
-        headers = {"Authorization": f"Bearer {self.config.compute_api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.config.compute_api_key}",
+            "Content-Type": "application/json",
+        }
 
         try:
             response = requests.post(url, json=payload, headers=headers)
