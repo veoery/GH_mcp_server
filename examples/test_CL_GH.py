@@ -1,11 +1,15 @@
+import Rhino
 import rhinoscriptsyntax as rs
 import scriptcontext as sc
+import System
+from Rhino.Geometry import *
 
 
 def main():
-    for i in range(10):
-        print(i + 1)
+    center = Point3d(10, 50, 0)
+    circle = Circle(Plane.WorldXY, center, 20)
+    return circle
 
 
 if __name__ == "__main__":
-    main()
+    circle = main()

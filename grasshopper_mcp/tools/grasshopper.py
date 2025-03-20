@@ -6,8 +6,39 @@ def register_grasshopper_tools(mcp: FastMCP) -> None:
     """Register Grasshopper-specific tools with the MCP server."""
 
     @mcp.tool()
+    async def generate_grasshopper_code(
+        description: str,
+        file_path: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        component_name: Optional[str] = None,
+    ) -> str:
+        """Generate Python code for a Grasshopper component based on a description.
+
+        Args:
+            description: Description of what the code should do
+            parameters: Optional parameters to use in the code generation
+            component_name: Optional name for the GH component
+
+        Returns:
+            Result of the operation including the file path to the generated code
+        """
+        ctx = mcp.get_context()
+        rhino = ctx.request_context.lifespan_context.rhino
+
+        result = await rhino.generate_and_execute_gh_code(description, file_path, parameters, component_name)
+
+        if result["result"] == "error":
+            return f"Error generating Grasshopper code: {result['error']}"
+
+        return f"""Generated Grasshopper Python code successfully:
+{result['code']}"""
+
+    @mcp.tool()
     async def create_grasshopper_script(
-        description: str, inputs: List[Dict[str, Any]], outputs: List[Dict[str, Any]], code: Optional[str] = None
+        description: str,
+        inputs: List[Dict[str, Any]],
+        outputs: List[Dict[str, Any]],
+        code: Optional[str] = None,
     ) -> str:
         """Create a Python script component in Grasshopper.
 
@@ -50,7 +81,9 @@ def register_grasshopper_tools(mcp: FastMCP) -> None:
 """
 
     @mcp.tool()
-    async def add_grasshopper_component(component_name: str, component_type: str, parameters: Dict[str, Any]) -> str:
+    async def add_grasshopper_component(
+        component_name: str, component_type: str, parameters: Dict[str, Any]
+    ) -> str:
         """Add a component from an existing Grasshopper plugin.
 
         Args:
@@ -122,7 +155,9 @@ def register_grasshopper_tools(mcp: FastMCP) -> None:
         ctx = mcp.get_context()
         rhino = ctx.request_context.lifespan_context.rhino
 
-        result = await rhino.run_gh_definition(file_path=file_path, save_output=save_output, output_path=output_path)
+        result = await rhino.run_gh_definition(
+            file_path=file_path, save_output=save_output, output_path=output_path
+        )
 
         if result["result"] == "error":
             return f"Error running definition: {result['error']}"

@@ -252,6 +252,101 @@ else:
 """
         return code
 
+    async def send_code_to_gh(self, code: str, file_path: str) -> Dict[str, Any]:
+        """Send Python code to a file for Grasshopper to use.
+
+        Args:
+            code: Python code to save for Grasshopper
+            file_path: Path where the Python file should be saved
+
+        Returns:
+            Dictionary with result and file path
+        """
+        try:
+            # Write the code to the file
+            with open(file_path, "w") as f:
+                f.write(code)
+
+            return {
+                "result": "success",
+                "file_path": file_path,
+                "message": f"Grasshopper Python file created at {file_path}",
+            }
+
+        except Exception as e:
+            return {"result": "error", "error": str(e)}
+
+    async def generate_and_execute_gh_code(
+        self,
+        prompt: str,
+        file_path: str,
+        model_context: Optional[Dict[str, Any]] = None,
+        component_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate Grasshopper Python code from a prompt and save it for execution.
+
+        Args:
+            prompt: Description of what code to generate
+            model_context: Optional context about the model (dimensions, parameters, etc.)
+            component_name: Optional name for the GH Python component
+
+        Returns:
+            Result dictionary with code, file path, and any output
+        """
+        # Step 1: Generate Python code based on the prompt
+        code = await self._generate_gh_code_from_prompt(prompt, model_context, component_name)
+
+        # Step 2: Save the generated code for Grasshopper to use
+        result = await self.send_code_to_gh(code, file_path)
+
+        # Return both the code and the result
+        return {
+            "result": result.get("result", "error"),
+            "code": code,
+            "file_path": result.get("file_path", ""),
+            "response": result.get("response", ""),
+            "error": result.get("error", ""),
+        }
+
+    async def _generate_gh_code_from_prompt(
+        self,
+        prompt: str,
+        model_context: Optional[Dict[str, Any]] = None,
+        component_name: Optional[str] = None,
+    ) -> str:
+        """Generate Grasshopper Python code from a text prompt.
+
+        Args:
+            prompt: Description of what the code should do
+            model_context: Optional context about the model
+            component_name: Optional name for the component
+
+        Returns:
+            Generated Python code as a string
+        """
+        # Add component name as a comment
+        if component_name:
+            code = f"""# Grasshopper Python Component: {component_name}
+# Generated from prompt: {prompt}
+"""
+        else:
+            code = f"""# Grasshopper Python Component
+# Generated from prompt: {prompt}
+"""
+
+        # Add standard imports for Grasshopper Python code
+        code += """
+import Rhino
+import rhinoscriptsyntax as rs
+import scriptcontext as sc
+import Rhino.Geometry as rg
+import ghpythonlib.components as ghcomp
+import math
+
+print("hello world")
+"""
+        return code
+
     def _initialize_compute(self) -> None:
         """Initialize connection to compute.rhino3d.com."""
         if not self.config.compute_url or not self.config.compute_api_key:
