@@ -89,7 +89,7 @@ uv pip install -e .
 
 2. Type command `CodeListener`. You should see `VS Code Listener Started...`.
 
-3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\test01.gh` as a reference to interacting with Grasshopper. Here are some examples:
+3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\test01.gh` as a reference for interacting with Grasshopper. Here are some examples:
 
    ```
    Read the file "D:\test01.3dm" first and analyse the objects in this file.
