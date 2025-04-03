@@ -8,6 +8,8 @@ GH_mcp_server provides an approach that allows designer to interact with Rhino a
 > - Pull requests are always welcome.
 > - If you're interested in collaborating long-term, feel free to reach out to yizhuod@andrew.cmu.edu — we’d love to **have you on the team**!
 
+![Alt text](examples/zaha01.png)
+
 ## Requirements
 
 - Rhino 7 or 8
@@ -89,12 +91,14 @@ uv pip install -e .
 
 2. Type command `CodeListener`. You should see `VS Code Listener Started...`.
 
-3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\test01.gh` as a reference for interacting with Grasshopper. Here are some examples:
+3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\zaha01.gh` as a reference for interacting with Grasshopper. Here are some examples:
 
    ```
    Read the file "D:\test01.3dm" first and analyse the objects in this file.
    ```
 
    ```
-   Send the code to GH to generate a circle at (10,20,30) with r=50. Save the code at "D:\test01.gh".
+   write GHpython to create a tower referring to zaha and write the ghpython code to "D:\zaha01.py"
    ```
+
+​	

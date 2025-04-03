@@ -5,40 +5,56 @@ from typing import Dict, List, Any, Optional
 def register_grasshopper_tools(mcp: FastMCP) -> None:
     """Register Grasshopper-specific tools with the MCP server."""
 
+    #     @mcp.tool()
+    #     async def generate_grasshopper_code(
+    #         description: str,
+    #         file_path: str,
+    #         parameters: Dict[str, Any] = None,
+    #         component_name: Optional[str] = None,
+    #     ) -> str:
+    #         """Generate Python code for a Grasshopper component based on a description.
+
+    #         Args:
+    #             description: Description of what the code should do
+    #             file_path: Path where the generated code will be saved
+    #             parameters: Dictionary of parameters to use in the code generation.
+    #                         Can include the following keys:
+    #                         - code_override: String containing complete code to use instead of generating
+    #                         - center_x, center_y, center_z: Numeric values for geometric operations
+    #                         - radius: Numeric value for circles or spheres
+    #                         - width, height, depth: Dimensions for rectangular forms
+    #                         - [Other commonly used parameters...]
+    #             component_name: Optional name for the GH component
+
+    #         Returns:
+    #             Result of the operation including the file path to the generated code
+    #         """
+    #         ctx = mcp.get_context()
+    #         rhino = ctx.request_context.lifespan_context.rhino
+
+    #         result = await rhino.generate_and_execute_gh_code(description, file_path, parameters, component_name)
+
+    #         if result["result"] == "error":
+    #             return f"Error generating Grasshopper code: {result['error']}"
+
+    #         return f"""Generated Grasshopper Python code successfully:
+    # {result['code']}"""
+
     @mcp.tool()
-    async def generate_grasshopper_code(
-        description: str,
-        file_path: str,
-        parameters: Dict[str, Any] = None,
-        component_name: Optional[str] = None,
-    ) -> str:
-        """Generate Python code for a Grasshopper component based on a description.
+    async def execute_grasshopper_code(code: str, file_path: str) -> str:
+        """Execute given Python code.
 
         Args:
-            description: Description of what the code should do
-            file_path: Path where the generated code will be saved
-            parameters: Dictionary of parameters to use in the code generation.
-                        Can include the following keys:
-                        - code_override: String containing complete code to use instead of generating
-                        - center_x, center_y, center_z: Numeric values for geometric operations
-                        - radius: Numeric value for circles or spheres
-                        - width, height, depth: Dimensions for rectangular forms
-                        - [Other commonly used parameters...]
-            component_name: Optional name for the GH component
+        code: The given code to execute
+        file_path: Path where the generated code will be saved
 
         Returns:
-            Result of the operation including the file path to the generated code
+            Result of the executing code
         """
         ctx = mcp.get_context()
         rhino = ctx.request_context.lifespan_context.rhino
 
-        result = await rhino.generate_and_execute_gh_code(description, file_path, parameters, component_name)
-
-        if result["result"] == "error":
-            return f"Error generating Grasshopper code: {result['error']}"
-
-        return f"""Generated Grasshopper Python code successfully:
-{result['code']}"""
+        result = await rhino.send_code_to_gh(code, file_path)
 
     @mcp.tool()
     async def add_grasshopper_component(

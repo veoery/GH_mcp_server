@@ -207,7 +207,9 @@ class RhinoConnection:
             "error": result.get("error", ""),
         }
 
-    async def _generate_code_from_prompt(self, prompt: str, model_context: Optional[Dict[str, Any]] = None) -> str:
+    async def _generate_code_from_prompt(
+        self, prompt: str, model_context: Optional[Dict[str, Any]] = None
+    ) -> str:
         """Generate Rhino Python code from a text prompt.
 
         Args:
@@ -404,7 +406,9 @@ print("Created a circle!")
             error_trace = traceback.format_exc()
             return {"result": "error", "error": str(e), "traceback": error_trace}
 
-    async def _execute_rhino3dm(self, code: str, parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def _execute_rhino3dm(
+        self, code: str, parameters: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Execute code using rhino3dm library."""
         # Create execution context with rhino3dm
         r3d = self.rhino_instance["r3d"]
@@ -422,7 +426,9 @@ print("Created a circle!")
         except Exception as e:
             return {"result": "error", "error": str(e)}
 
-    async def _execute_compute(self, code: str, parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def _execute_compute(
+        self, code: str, parameters: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Execute code via compute.rhino3d.com API."""
         # Existing Compute API code
         import requests
@@ -492,10 +498,14 @@ print("Created a circle!")
 
         if self.config.use_compute_api:
             # Implementation for compute API
-            return await self._create_gh_script_component_compute(component_id, description, inputs, outputs, code)
+            return await self._create_gh_script_component_compute(
+                component_id, description, inputs, outputs, code
+            )
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
             # Implementation for RhinoInside (Windows)
-            return await self._create_gh_script_component_rhinoinside(component_id, description, inputs, outputs, code)
+            return await self._create_gh_script_component_rhinoinside(
+                component_id, description, inputs, outputs, code
+            )
         else:
             # We can't directly create Grasshopper components with rhino3dm
             return {
@@ -636,10 +646,14 @@ print("Created a circle!")
 
         if self.config.use_compute_api:
             # Implementation for compute API
-            return await self._add_gh_component_compute(component_id, component_name, component_type, parameters)
+            return await self._add_gh_component_compute(
+                component_id, component_name, component_type, parameters
+            )
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
             # Implementation for RhinoInside
-            return await self._add_gh_component_rhinoinside(component_id, component_name, component_type, parameters)
+            return await self._add_gh_component_rhinoinside(
+                component_id, component_name, component_type, parameters
+            )
         else:
             return {
                 "result": "error",
@@ -747,7 +761,9 @@ print("Created a circle!")
         if self.config.use_compute_api:
             return await self._connect_gh_components_compute(source_id, source_param, target_id, target_param)
         elif platform.system() == "Windows" and not self.rhino_instance.get("use_rhino3dm", True):
-            return await self._connect_gh_components_rhinoinside(source_id, source_param, target_id, target_param)
+            return await self._connect_gh_components_rhinoinside(
+                source_id, source_param, target_id, target_param
+            )
         else:
             return {
                 "result": "error",

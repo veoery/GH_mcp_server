@@ -50,21 +50,25 @@ mcp = FastMCP("Grasshopper 3D Modeling", lifespan=app_lifespan)
 from grasshopper_mcp.tools.modeling import register_modeling_tools
 from grasshopper_mcp.tools.analysis import register_analysis_tools
 from grasshopper_mcp.resources.model_data import register_model_resources
-from grasshopper_mcp.prompts.templates import register_prompts
 from grasshopper_mcp.tools.grasshopper import register_grasshopper_tools
 from grasshopper_mcp.tools.advanced_grasshopper import register_advanced_grasshopper_tools
 from grasshopper_mcp.tools.rhino_code_gen import register_rhino_code_generation_tools
 
-# Register tools, resources, and prompts
+# Import prompt definitions
+from grasshopper_mcp.prompts.grasshopper_prompts import register_grasshopper_code_prompts
+
+# Register tools
 register_modeling_tools(mcp)
 register_analysis_tools(mcp)
 register_model_resources(mcp)
-register_prompts(mcp)
 
 register_grasshopper_tools(mcp)
-register_advanced_grasshopper_tools(mcp)
 
-register_rhino_code_generation_tools(mcp)
+# register_advanced_grasshopper_tools(mcp)
+# register_rhino_code_generation_tools(mcp)
+
+# Register prompts
+register_grasshopper_code_prompts(mcp)
 
 
 def main():
