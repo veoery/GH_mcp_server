@@ -2,9 +2,17 @@
 
 GH_mcp_server provides an approach that allows designer to interact with Rhino and Grasshopper directly via LLMs, including to analyse .3dm file, do 3D modeling and generate GHPython automatically in Grasshopper based on user’s guidance.
 
+>  This project is **still under construction** — and we’d love your help!
+>
+> - Feel free to **open an issue** if you encounter bugs or have ideas.
+> - Pull requests are always welcome.
+> - If you're interested in collaborating long-term, feel free to reach out to yizhuod@andrew.cmu.edu — we’d love to **have you on the team**!
+
 ## Requirements
 
 - Rhino 7 or 8
+
+- Install `RhinoPython`: https://github.com/jingcheng-chen/RhinoPythonForVscode/tree/master?tab=readme-ov-file
 
 - `uv`
 
@@ -18,9 +26,9 @@ GH_mcp_server provides an approach that allows designer to interact with Rhino a
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
     ``````
 
-## Installation
+- Claude Desktop
 
-We recommend using `uv`:
+## Installation
 
 ### 1. Clone the repository
 
@@ -32,6 +40,8 @@ cd GH_mcp_server
 ------
 
 ### 2. Set up the environment
+
+We recommend using `uv`:
 
 #### macOS/Linux
 
@@ -51,3 +61,40 @@ uv pip install -e .
 
 > Make sure the virtual environment is activated before running or developing the project.
 
+### 3. Configuration
+
+1. In the Claude Desktop, Navigate to Settings->Developer. You will see ```Edit Config```.
+
+2. Click the ```Edit Config``` and open the file ```claude_desktop_config.json```
+
+3. Place the following code to the json file:
+   ```python
+   {
+     "mcpServers": {
+       "grasshopper": {
+         "command": "path_to_GH_mcp_server/.venv/bin/python",
+         "args": [
+           "path_to_GH_mcp_server/run_server.py"
+         ]
+       }
+     }
+   }
+   ```
+
+4. Restart the Claude Desktop. If you are able to see a hammer icon, the configuration is successful. Click the hammer icon to check all the attached MCP tools.
+
+## Usage
+
+1. Start Rhino
+
+2. Type command `CodeListener`. You should see `VS Code Listener Started...`.
+
+3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\test01.gh` as a reference to interacting with Grasshopper. Here are some examples:
+
+   ```
+   Read the file "D:\test01.3dm" first and analyse the objects in this file.
+   ```
+
+   ```
+   Send the code to GH to generate a circle at (10,20,30) with r=50. Save the code at "D:\test01.gh".
+   ```
