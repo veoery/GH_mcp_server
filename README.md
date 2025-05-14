@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/veoery-gh-mcp-server-badge.png)](https://mseep.ai/app/veoery-gh-mcp-server)
+
 # GH_mcp_server
 
 GH_mcp_server provides an approach that allows designer to interact with Rhino and Grasshopper directly via LLMs, including to analyse .3dm file, do 3D modeling and generate GHPython automatically in Grasshopper based on user’s guidance.
