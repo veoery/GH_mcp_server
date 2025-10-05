@@ -29,6 +29,9 @@ GH_mcp_server provides an approach that allows designer to interact with Rhino a
     ``````
 
 - Claude Desktop
+  - Download and install Claude Desktop
+  - Add extension: go to files -> setting -> Extensions -> Browse extensions and install "Filesystem".
+  ![Alt text](assests/FileSystem.png)
 
 ## Installation
 
@@ -87,18 +90,24 @@ uv pip install -e .
 
 ## Usage
 
+### For Rhino
+
 1. Start Rhino
 
 2. Type command `CodeListener`. You should see `VS Code Listener Started...`.
 
-3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\zaha01.gh` as a reference for interacting with Grasshopper. Here are some examples:
+3. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. 
 
    ```
    Read the file "D:\test01.3dm" first and analyse the objects in this file.
    ```
 
+
+
+### For Grasshopper
+1. Start Rhino and Grasshopper
+
+2. Open the Claude Desktop and type the prompts to interact with GH_mcp_server tools. Please also check the file `examples\zaha01.gh` as a reference for interacting with Grasshopper. Here are some examples:
    ```
    write GHpython to create a tower referring to zaha and write the ghpython code to "D:\zaha01.py"
    ```
-
-​	
