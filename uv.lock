@@ -218,7 +218,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
     { name = "requests" },
-    { name = "rhino3dm", specifier = ">=8.17.0" },
+    { name = "rhino3dm", specifier = ">=7.15.0" },
     { name = "rhinoinside", marker = "sys_platform == 'win32'" },
 ]
 provides-extras = ["dev"]

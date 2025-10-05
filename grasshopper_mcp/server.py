@@ -44,7 +44,8 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
 
 # Create the MCP server
-mcp = FastMCP("Grasshopper 3D Modeling", lifespan=app_lifespan)
+# mcp = FastMCP("Grasshopper 3D Modeling", lifespan=app_lifespan)
+mcp = FastMCP("Grasshopper 3D Modeling")
 
 # Import tool definitions
 from grasshopper_mcp.tools.modeling import register_modeling_tools
@@ -73,7 +74,7 @@ register_grasshopper_code_prompts(mcp)
 
 def main():
     """Run the server."""
-    mcp.run()
+    mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

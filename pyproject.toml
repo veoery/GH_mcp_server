@@ -11,8 +11,8 @@ requires-python = ">=3.10"
 license = {text = "MIT"}
 dependencies = [
     "mcp>=1.4.0",
-    "rhinoinside; platform_system=='Windows'",  # For Windows
-    "rhino3dm>=7.15.0",                        
+    "rhinoinside; platform_system=='Windows'", # For Windows
+    "rhino3dm>=7.15.0",
     "requests",
     "python-dotenv",
 ]
